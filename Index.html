@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#030712"><link rel="manifest" href="manifest.webmanifest">
+<title>FamilienBoard</title>
+<style>
+:root{--pink:#ff2abf;--blue:#2997ff;--cyan:#34e7ff;--green:#66ff35;--gold:#ffd43b}
+*{box-sizing:border-box} body{margin:0;background:#02050d;color:#fff;font-family:Arial,sans-serif;overflow:hidden}
+body:before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 50% 50%,#0a2450 0,transparent 42%),linear-gradient(#02050d,#000);z-index:-3}
+.board{height:100dvh;padding:12px;display:grid;grid-template-rows:105px 1fr 175px;gap:10px}
+header{display:grid;grid-template-columns:300px 1fr 330px;align-items:center}.clock{font-size:58px;font-weight:900;text-shadow:0 0 18px #fff}.date{font-size:17px}.title{text-align:center;font-size:48px;font-weight:900;letter-spacing:2px;text-shadow:0 0 20px #4ac7ff}.subtitle{text-align:center;letter-spacing:6px;font-size:13px}.controls{text-align:right}
+button{font:inherit;color:#fff;background:#091426;border:1px solid #48719d;border-radius:16px;padding:11px 15px;cursor:pointer}
+.people{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;min-height:0}
+.card{--c:#fff;border:2px solid var(--c);border-radius:22px;background:#050a14e8;box-shadow:0 0 18px color-mix(in srgb,var(--c) 70%,transparent);padding:10px;min-width:0;overflow:auto}
+.lisa{--c:var(--pink)}.micha{--c:var(--blue)}.mila{--c:var(--cyan)}.nick{--c:var(--green)}
+.person{display:flex;align-items:center;gap:10px;margin-bottom:6px}.avatar{width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid var(--c);box-shadow:0 0 20px var(--c)}
+.name{font-size:31px;font-weight:900;color:var(--c);text-shadow:0 0 12px var(--c)}
+.task{display:grid;grid-template-columns:48px 1fr 54px;align-items:center;min-height:52px;border-top:1px solid #ffffff18;padding:3px 0}.time{color:var(--c);font-weight:800}.check{width:42px;height:42px;border-radius:50%;border:2px solid var(--c);background:transparent;padding:0;font-size:26px}.done{opacity:.45;text-decoration:line-through}.done .check{background:#20c85a;border-color:#20c85a}
+.due{animation:pulse 1.3s infinite}@keyframes pulse{50%{background:color-mix(in srgb,var(--c) 20%,transparent);box-shadow:inset 0 0 20px var(--c)}}
+.add{width:100%;margin-top:7px;border-color:var(--c);color:var(--c)}
+.bottom{display:grid;grid-template-columns:1fr 1.5fr;gap:10px}.family{--c:#a650ff;border:2px solid var(--c);border-radius:20px;padding:10px;background:#080615e8;box-shadow:0 0 18px #a650ff99;overflow:auto}
+.family h2{margin:0 0 5px;color:#dc9cff}.family .task{grid-template-columns:1fr 54px}
+.heart{border:2px solid var(--gold);border-radius:20px;position:relative;display:grid;place-items:center;background:#070a12;overflow:hidden}
+.heartShape{font-size:80px;filter:drop-shadow(0 0 20px #ff2abf);line-height:1}.hands{font-size:28px;letter-spacing:8px}.motto{font-size:18px;margin-top:3px}
+.alert{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#3b0710;border:2px solid #ff304f;border-radius:16px;padding:12px 24px;box-shadow:0 0 22px #ff304f;display:none;z-index:10}
+@media(max-width:1100px){.board{padding:7px;grid-template-rows:90px 1fr 145px}.clock{font-size:45px}.title{font-size:38px}.avatar{width:58px;height:58px}.name{font-size:25px}.task{min-height:45px;font-size:14px}.check{width:38px;height:38px}.bottom{font-size:13px}}
+
+.modal{position:fixed;inset:0;background:#000d;display:none;place-items:center;z-index:99;padding:16px}
+.modal.open{display:grid}.modalbox{width:min(1180px,96vw);max-height:92vh;overflow:auto;background:#050a14;border:2px solid #34e7ff;border-radius:22px;padding:16px;box-shadow:0 0 30px #34e7ff77}
+.modalhead{display:flex;align-items:center;justify-content:space-between}.modalhead h2{margin:0;color:#34e7ff}.tabs{display:flex;gap:8px;margin:12px 0}.tabs .active{border-color:#34e7ff;color:#34e7ff}
+.week{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.daycol{background:#07101f;border:1px solid #ffffff22;border-radius:13px;padding:9px}.daycol h3{margin:0 0 7px;color:#34e7ff}.lesson{padding:6px 0;border-top:1px solid #ffffff15;font-size:14px}
+.events{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.event{background:#0b0715;border:1px solid #a650ff88;border-radius:12px;padding:9px}
+@media(max-width:1000px){.week{grid-template-columns:repeat(5,1fr);font-size:12px}.lesson{font-size:12px}}
+
+</style></head>
+<body><main class="board">
+<header><div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+<div><div class="title">FAMILIENBOARD</div><div class="subtitle">GEMEINSAM • STÄRKER • JEDEN TAG</div></div>
+<div class="controls"><button id="soundBtn">🔔 Töne aktivieren</button> <button id="schoolBtn">📚 Stundenplan</button> <button id="calBtn">📅 Kalender</button> <button id="fullBtn">⛶ Vollbild</button></div></header>
+<section class="people" id="people"></section>
+<section class="bottom"><div class="family"><h2>👨‍👩‍👧‍👦 Familien-Aufgaben</h2><div id="familyTasks"></div><button class="add" id="addFamily">＋ Familienaufgabe</button></div>
+<div class="heart"><div style="text-align:center"><div class="heartShape">♡</div><div class="hands">🩷 💙 🩵 💚</div><div class="motto">Eine Familie · Ein Team · Für immer</div></div></div></section>
+</main><div class="alert" id="alert"></div>
+
+<div class="modal" id="modal"><div class="modalbox">
+<div class="modalhead"><h2 id="modalTitle"></h2><button id="closeModal">✕</button></div>
+<div class="tabs" id="tabs"></div><div id="modalContent"></div>
+</div></div>
+
+<script>
+const PEOPLE=[
+{id:"lisa",name:"Lisa",img:"lisa.jpg",free:true},
+{id:"micha",name:"Micha",img:"micha.jpg",free:true},
+{id:"mila",name:"Mila",img:"mila.jpg",free:false},
+{id:"nick",name:"Nick",img:"nick.jpg",free:false}
+];
+
+const MILA_PLAN={
+"Montag":["1 NW","2 Sfö-D","3 D","4 E","5 Mu","6 INF"],
+"Dienstag":["1 GL","2 M","3 SOZ-L","4 E"],
+"Mittwoch":["1 Schw","2 Schw","3 GL","4 D","5 Ku","6 LZ"],
+"Donnerstag":["1 Ku","2 Hw-Te","3 M","4 LZ","5 LZ"],
+"Freitag":["1 NW","2 PP/ER/KR","3 M","4 E","5 KLR"]};
+const NICK_PLAN={
+"Montag":["08:00–08:45 Unterricht","08:50–09:35 Unterricht","10:05–10:50 Unterricht","10:55–11:40 Unterricht","11:55–12:40 Unterricht"],
+"Dienstag":["08:00–08:45 Schwimmen","08:50–09:35 Schwimmen","10:05–10:50 Unterricht","10:55–11:40 Unterricht"],
+"Mittwoch":["08:00–08:45 Sport","08:50–09:35 Unterricht","10:05–10:50 Unterricht","10:55–11:40 Unterricht","11:55–12:40 Lernzeit"],
+"Donnerstag":["08:00–08:45 Unterricht","08:50–09:35 Unterricht","10:05–10:50 Unterricht","10:55–11:40 Unterricht"],
+"Freitag":["08:00–08:45 Unterricht","08:50–09:35 Unterricht","10:05–10:50 Unterricht","10:55–11:40 Unterricht"]};
+const SCHOOL_EVENTS=[
+["24.09.2026","Radfahrtraining 4. Klassen","08:00–11:40"],
+["28.09.2026","Jg. 3 Sozialtraining","Unterrichtszeit"],
+["29.09.2026","Jg. 3 Sozialtraining","Unterrichtszeit"],
+["01.10.2026","Jg. 3 Sozialtraining","Unterrichtszeit"],
+["13.10.2026","Schulpflegschaft / Schulkonferenz","17:30"],
+["16.10.2026","Sponsorenlauf","10:00–11:40"],
+["17.10.–31.10.2026","Herbstferien",""],
+["13.11.2026","Theater in der Schule","nach Plan"],
+["19.–20.11.2026","Radfahrtraining 4. Klassen","08:00–11:40"],
+["20.11.2026","Vorlesetag","Unterrichtszeit"],
+["23.–27.11.2026","Elternsprechtage","nach Vereinbarung"],
+["25.–27.11.2026","Klassenfahrt Jg. 4",""],
+["07.12.2026","Nikolaus",""],
+["14.12.2026","Adventssingen",""],
+["22.12.2026","Weihnachtsfeier",""],
+["23.12.2026–06.01.2027","Weihnachtsferien",""],
+["25.–29.01.2027","Trommelzauber / Projektwoche","Planung folgt"],
+["03.02.2027","Rosenmontag",""],
+["05.02.2027","Karneval",""],
+["10.02.2027","Zeugnisausgabe in Kopie","08:00–11:40"],
+["12.02.2027","Zeugnisausgabe + Original","3./4. Klassen"]];
+const WEEKDAYS=["Montag","Dienstag","Mittwoch","Donnerstag","Freitag"];
+function showPlan(who="mila"){
+ modal.classList.add("open"); modalTitle.textContent="📚 Stundenpläne";
+ tabs.innerHTML=`<button id="tabMila" class="${who==="mila"?"active":""}">Mila</button><button id="tabNick" class="${who==="nick"?"active":""}">Nick</button>`;
+ tabMila.onclick=()=>showPlan("mila"); tabNick.onclick=()=>showPlan("nick");
+ const p=who==="mila"?MILA_PLAN:NICK_PLAN;
+ modalContent.innerHTML=`<div class="week">${WEEKDAYS.map(d=>`<div class="daycol"><h3>${d}</h3>${p[d].map(x=>`<div class="lesson">${x}</div>`).join("")}</div>`).join("")}</div>`;
+}
+function showCalendar(){
+ modal.classList.add("open"); modalTitle.textContent="📅 Familienkalender"; tabs.innerHTML="";
+ let own=JSON.parse(localStorage.getItem("family-calendar")||"[]");
+ modalContent.innerHTML=`<button id="addEvent">＋ Termin hinzufügen</button><div class="events" style="margin-top:10px">${SCHOOL_EVENTS.concat(own).map(e=>`<div class="event"><b>${e[0]}</b><br>${e[1]}${e[2]?`<br><small>${e[2]}</small>`:""}</div>`).join("")}</div>`;
+ addEvent.onclick=()=>{let d=prompt("Datum:");if(!d)return;let t=prompt("Termin:");if(!t)return;own.push([d,t,"Familie"]);localStorage.setItem("family-calendar",JSON.stringify(own));showCalendar()};
+}
+
+const FIXED={
+mila:[["07:00","Zähne putzen","07:00","07:15"],["07:15","Etwas entspannen","07:15","07:20"],["07:20","Mila muss zur Schule","07:20","08:00"],["16:00","Hausaufgaben","16:00","20:00"],["18:00","Lesen","18:00","20:00"],["18:00","Zähne putzen","18:00","20:00"],["18:00","Rucksack kontrollieren","18:00","20:00"]],
+nick:[["07:00","Zähne putzen","07:00","07:15"],["07:15","Etwas entspannen","07:15","07:20"],["16:00","Hausaufgaben","16:00","20:00"],["18:00","Lesen","18:00","20:00"],["18:00","Zähne putzen","18:00","20:00"],["18:00","Rucksack kontrollieren","18:00","20:00"]]
+};
+const day=()=>new Date().toISOString().slice(0,10), key="familienboard-v1";
+let state=JSON.parse(localStorage.getItem(key)||'{"day":"","done":{},"custom":{"lisa":[],"micha":[]},"family":[]}');
+if(state.day!==day()){state.day=day();state.done={};save()}
+function save(){localStorage.setItem(key,JSON.stringify(state))}
+const mins=s=>{let[a,b]=s.split(":").map(Number);return a*60+b}, nowM=()=>{let d=new Date();return d.getHours()*60+d.getMinutes()}
+function taskKey(p,i){return p+"-"+i}
+function render(){
+ people.innerHTML="";
+ PEOPLE.forEach(p=>{let card=document.createElement("div");card.className="card "+p.id;
+ let tasks=p.free?(state.custom[p.id]||[]).map((x,i)=>["",x,"00:00","23:59"]):FIXED[p.id];
+ card.innerHTML=`<div class="person"><img class="avatar" src="${p.img}"><div class="name">${p.name}</div></div><div class="tasks"></div>${p.free?'<button class="add">＋ Aufgabe hinzufügen</button>':''}`;
+ let box=card.querySelector(".tasks");
+ tasks.forEach((t,i)=>{let k=taskKey(p.id,i),done=!!state.done[k],due=!done&&nowM()>=mins(t[2])&&nowM()<mins(t[3]);
+ let row=document.createElement("div");row.className="task"+(done?" done":"")+(due?" due":"");
+ row.innerHTML=`<span class="time">${t[0]}</span><span>${t[1]}</span><button class="check">${done?"✓":""}</button>`;
+ row.querySelector(".check").onclick=()=>{state.done[k]=!state.done[k];save();render()};
+ box.appendChild(row)});
+ if(p.free)card.querySelector(".add").onclick=()=>{let x=prompt("Neue Aufgabe für "+p.name+":");if(x){state.custom[p.id].push(x);save();render()}};
+ people.appendChild(card)
+ });
+ familyTasks.innerHTML="";
+ state.family.forEach((x,i)=>{let k="fam-"+i,done=!!state.done[k],r=document.createElement("div");r.className="task"+(done?" done":"");r.innerHTML=`<span>${x}</span><button class="check">${done?"✓":""}</button>`;r.querySelector(".check").onclick=()=>{state.done[k]=!state.done[k];save();render()};familyTasks.appendChild(r)})
+}
+addFamily.onclick=()=>{let x=prompt("Neue Familienaufgabe:");if(x){state.family.push(x);save();render()}};
+let audio=null,lastSound=0;
+soundBtn.onclick=()=>{audio=new (window.AudioContext||window.webkitAudioContext)();soundBtn.textContent="🔔 Töne aktiv";chime()};
+function chime(){if(!audio)return;[523,659,784].forEach((f,i)=>{let o=audio.createOscillator(),g=audio.createGain(),s=audio.currentTime+i*.1;o.frequency.value=f;o.type="sine";g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.08,s+.03);g.gain.exponentialRampToValueAtTime(.0001,s+.7);o.connect(g);g.connect(audio.destination);o.start(s);o.stop(s+.75)})}
+function tick(){let d=new Date();clock.textContent=d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});date.textContent=d.toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+ let due=[];["mila","nick"].forEach(p=>FIXED[p].forEach((t,i)=>{if(!state.done[taskKey(p,i)]&&nowM()>=mins(t[2])&&nowM()<mins(t[3]))due.push((p==="mila"?"Mila":"Nick")+": "+t[1])}));
+ alert.style.display=due.length?"block":"none";alert.textContent=due.length?"🔔 Noch offen: "+due.join(" · "):"";
+ if(due.length&&audio&&Date.now()-lastSound>300000){chime();lastSound=Date.now()}
+ render()
+}
+fullBtn.onclick=()=>document.documentElement.requestFullscreen?.();
+schoolBtn.onclick=()=>showPlan("mila");
+calBtn.onclick=showCalendar;
+closeModal.onclick=()=>modal.classList.remove("open");
+modal.onclick=e=>{if(e.target===modal)modal.classList.remove("open")};
+
+render();tick();setInterval(tick,30000);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+</script></body></html>
