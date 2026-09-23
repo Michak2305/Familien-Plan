@@ -1,0 +1,1 @@
+const C='familienboard-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html','manifest.webmanifest','images/lisa.jpg','images/micha.jpg','images/mila.jpg','images/nick.jpg']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
